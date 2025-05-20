@@ -173,7 +173,7 @@ def unlock_car():
     except Exception as e:
         print(f"Error in /unlock_car: {e}")
         return jsonify({"error": str(e)}), 500
-
+        
 # Vehicle status endpoint
 @app.route('/vehicle_status', methods=['GET'])
 def vehicle_status():
@@ -191,16 +191,26 @@ def vehicle_status():
         if not vehicle:
             return jsonify({"error": "Vehicle not found"}), 404
 
-        # Fetch the current vehicle status
-        status = vehicle.get_status()
+        # El estado actualizado está en vehicle.state (diccionario)
+        status = vehicle.state
 
-        # Extract door lock status
+        # Extraemos estado de puertas
         door_locked = status.get("doorLockStatus", "Unknown")
 
-        # Attempt to get fuel range (gasoline/diesel vehicles)
-        range_remaining = status.get("rangeByFuel", {}).get("totalAvailableRange")
+        # Autonomía para gasolina/diésel
+        range_remaining = None
+
+        # Primero intentamos sacar el rango en 'rangeByFuel'
+        range_by_fuel = status.get("rangeByFuel")
+        if range_by_fuel:
+            range_remaining = range_by_fuel.get("totalAvailableRange")
+
+        # Si no hay, intentamos fuelRange (campo alternativo)
         if not range_remaining:
-            range_remaining = status.get("fuelRange", "Unknown")
+            range_remaining = status.get("fuelRange")
+
+        if not range_remaining:
+            range_remaining = "Unknown"
 
         return jsonify({
             "status": "Success",
@@ -209,6 +219,7 @@ def vehicle_status():
                 "range_remaining_km": range_remaining
             }
         }), 200
+
     except Exception as e:
         print(f"Error in /vehicle_status: {e}")
         return jsonify({"error": str(e)}), 500
