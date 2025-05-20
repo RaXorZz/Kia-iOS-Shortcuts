@@ -217,6 +217,29 @@ def vehicle_status():
         print(f"Error in /vehicle_status: {e}")
         return jsonify({"error": str(e)}), 500
 
+#DEBUG
+@app.route('/debug_vehicles', methods=['GET'])
+def debug_vehicles():
+    if request.headers.get("Authorization") != SECRET_KEY:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        vehicle_manager.update_all_vehicles_with_cached_state()
+
+        vehicles = vehicle_manager.vehicles
+        vehicles_info = {}
+
+        for vid, vehicle in vehicles.items():
+            vehicles_info[vid] = {
+                "type": str(type(vehicle)),
+                "attributes": dir(vehicle),
+                "vars": vars(vehicle)
+            }
+
+        return jsonify({"vehicles": vehicles_info}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
         
 # Lock car endpoint
