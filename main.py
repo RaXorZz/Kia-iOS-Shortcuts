@@ -174,6 +174,14 @@ def unlock_car():
         print(f"Error in /unlock_car: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route("/vehicle_status", methods=['POST'])
+async def vehicle_status():
+    try:
+        vehicle_status = kia.get_vehicle_status()
+        return vehicle_status
+    except Exception as e:
+        return {"error": str(e)}
+        
 # Lock car endpoint
 @app.route('/lock_car', methods=['POST'])
 def lock_car():
