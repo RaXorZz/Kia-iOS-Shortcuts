@@ -185,37 +185,32 @@ def vehicle_status():
 
     try:
         vehicle_manager.update_all_vehicles_with_cached_state()
-        vehicle = vehicle_manager.vehicles.get(VEHICLE_ID)
 
+        vehicle = vehicle_manager.vehicles.get("da9cf91a-6056-47ba-a3e9-fbdb6599697f")
         if not vehicle:
             return jsonify({"error": "Vehicle not found"}), 404
 
-        print("Vehicle attributes:", dir(vehicle))
         print("Vehicle vars:", vars(vehicle))
 
-        # Intentar acceder a cached_state o _cached_state
-        status = getattr(vehicle, "cached_state", None) or getattr(vehicle, "_cached_state", None)
+        # Extraer valores directos del vehículo
+        doors_locked = vehicle.is_locked if hasattr(vehicle, "is_locked") else None
+        fuel_range = getattr(vehicle, "_fuel_driving_range", None) or getattr(vehicle, "fuel_driving_range", None)
 
-        if not status:
-            return jsonify({"error": "No cached state found on vehicle object"}), 500
-
-        print("Vehicle cached state:", status)
-
-        door_locked = status.get("doorLockStatus", "Unknown")
-        range_by_fuel = status.get("rangeByFuel")
-        range_remaining = range_by_fuel.get("totalAvailableRange") if range_by_fuel else status.get("fuelRange", "Unknown")
+        if doors_locked is None or fuel_range is None:
+            return jsonify({"error": "Required attributes not found"}), 500
 
         return jsonify({
             "status": "Success",
             "vehicle_status": {
-                "doors_locked": door_locked,
-                "range_remaining_km": range_remaining
+                "doors_locked": doors_locked,
+                "range_remaining_km": fuel_range
             }
         }), 200
 
     except Exception as e:
         print(f"Error in /vehicle_status: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 #DEBUG
 import json
