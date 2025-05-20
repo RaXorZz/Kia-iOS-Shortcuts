@@ -191,8 +191,8 @@ def vehicle_status():
         if not vehicle:
             return jsonify({"error": "Vehicle not found"}), 404
 
-        # El estado actualizado está en vehicle.state (diccionario)
-        status = vehicle.state
+        # Obtener estado con get_cached_state()
+        status = vehicle.get_cached_state()
 
         # Extraemos estado de puertas
         door_locked = status.get("doorLockStatus", "Unknown")
