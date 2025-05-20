@@ -184,31 +184,26 @@ def vehicle_status():
         return jsonify({"error": "Unauthorized"}), 403
 
     try:
-        print("Refreshing vehicle states...")
         vehicle_manager.update_all_vehicles_with_cached_state()
-
         vehicle = vehicle_manager.vehicles.get(VEHICLE_ID)
+
         if not vehicle:
             return jsonify({"error": "Vehicle not found"}), 404
 
-        # Accedemos al estado actual desde el atributo 'status'
-        status = vehicle.status
+        print("Vehicle attributes:", dir(vehicle))
+        print("Vehicle vars:", vars(vehicle))
 
-        # Estado de las puertas
+        # Intentar acceder a cached_state o _cached_state
+        status = getattr(vehicle, "cached_state", None) or getattr(vehicle, "_cached_state", None)
+
+        if not status:
+            return jsonify({"error": "No cached state found on vehicle object"}), 500
+
+        print("Vehicle cached state:", status)
+
         door_locked = status.get("doorLockStatus", "Unknown")
-
-        # Autonomía para gasolina/diésel
-        range_remaining = None
-
         range_by_fuel = status.get("rangeByFuel")
-        if range_by_fuel:
-            range_remaining = range_by_fuel.get("totalAvailableRange")
-
-        if not range_remaining:
-            range_remaining = status.get("fuelRange")
-
-        if not range_remaining:
-            range_remaining = "Unknown"
+        range_remaining = range_by_fuel.get("totalAvailableRange") if range_by_fuel else status.get("fuelRange", "Unknown")
 
         return jsonify({
             "status": "Success",
@@ -221,6 +216,7 @@ def vehicle_status():
     except Exception as e:
         print(f"Error in /vehicle_status: {e}")
         return jsonify({"error": str(e)}), 500
+
 
         
 # Lock car endpoint
