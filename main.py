@@ -181,6 +181,45 @@ async def vehicle_status():
         return vehicle_status
     except Exception as e:
         return {"error": str(e)}
+
+# Vehicle status endpoint
+@app.route('/vehicle_status', methods=['GET'])
+def vehicle_status():
+    print("Received request to /vehicle_status")
+
+    if request.headers.get("Authorization") != SECRET_KEY:
+        print("Unauthorized request: Missing or incorrect Authorization header")
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        print("Refreshing vehicle states...")
+        vehicle_manager.update_all_vehicles_with_cached_state()
+
+        vehicle = vehicle_manager.vehicles.get(VEHICLE_ID)
+        if not vehicle:
+            return jsonify({"error": "Vehicle not found"}), 404
+
+        # Fetch the current vehicle status
+        status = vehicle.get_status()
+
+        # Extract door lock status
+        door_locked = status.get("doorLockStatus", "Unknown")
+
+        # Attempt to get fuel range (gasoline/diesel vehicles)
+        range_remaining = status.get("rangeByFuel", {}).get("totalAvailableRange")
+        if not range_remaining:
+            range_remaining = status.get("fuelRange", "Unknown")
+
+        return jsonify({
+            "status": "Success",
+            "vehicle_status": {
+                "doors_locked": door_locked,
+                "range_remaining_km": range_remaining
+            }
+        }), 200
+    except Exception as e:
+        print(f"Error in /vehicle_status: {e}")
+        return jsonify({"error": str(e)}), 500
         
 # Lock car endpoint
 @app.route('/lock_car', methods=['POST'])
