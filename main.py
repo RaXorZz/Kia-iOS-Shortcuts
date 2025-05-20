@@ -218,6 +218,15 @@ def vehicle_status():
         return jsonify({"error": str(e)}), 500
 
 #DEBUG
+import json
+
+def safe_serialize(obj):
+    try:
+        json.dumps(obj)
+        return obj
+    except (TypeError, OverflowError):
+        return str(obj)
+
 @app.route('/debug_vehicles', methods=['GET'])
 def debug_vehicles():
     if request.headers.get("Authorization") != SECRET_KEY:
@@ -230,10 +239,16 @@ def debug_vehicles():
         vehicles_info = {}
 
         for vid, vehicle in vehicles.items():
+            # Serializamos atributos y vars, convirtiendo los valores no serializables en string
+            attributes = dir(vehicle)
+            vars_dict = vars(vehicle)
+
+            safe_vars = {k: safe_serialize(v) for k, v in vars_dict.items()}
+
             vehicles_info[vid] = {
                 "type": str(type(vehicle)),
-                "attributes": dir(vehicle),
-                "vars": vars(vehicle)
+                "attributes": attributes,
+                "vars": safe_vars
             }
 
         return jsonify({"vehicles": vehicles_info}), 200
