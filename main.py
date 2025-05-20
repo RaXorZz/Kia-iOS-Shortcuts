@@ -191,21 +191,19 @@ def vehicle_status():
         if not vehicle:
             return jsonify({"error": "Vehicle not found"}), 404
 
-        # Obtener estado con get_cached_state()
-        status = vehicle.get_cached_state()
+        # Accedemos al estado actual desde el atributo 'status'
+        status = vehicle.status
 
-        # Extraemos estado de puertas
+        # Estado de las puertas
         door_locked = status.get("doorLockStatus", "Unknown")
 
         # Autonomía para gasolina/diésel
         range_remaining = None
 
-        # Primero intentamos sacar el rango en 'rangeByFuel'
         range_by_fuel = status.get("rangeByFuel")
         if range_by_fuel:
             range_remaining = range_by_fuel.get("totalAvailableRange")
 
-        # Si no hay, intentamos fuelRange (campo alternativo)
         if not range_remaining:
             range_remaining = status.get("fuelRange")
 
@@ -223,6 +221,7 @@ def vehicle_status():
     except Exception as e:
         print(f"Error in /vehicle_status: {e}")
         return jsonify({"error": str(e)}), 500
+
         
 # Lock car endpoint
 @app.route('/lock_car', methods=['POST'])
